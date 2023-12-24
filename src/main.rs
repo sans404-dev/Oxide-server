@@ -84,7 +84,6 @@ impl User {
             let data = self.recv();
             if !data.is_empty() {
                 if !self.session_key.is_some() {
-                    info!("why");
                     let data = &sectors::read_sectors(data);
                     let rsa_key = RsaPublicKey::from_public_key_pem(&data[0]).unwrap();
                     dbg!(&data);
