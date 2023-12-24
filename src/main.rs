@@ -23,20 +23,6 @@ use once_cell::sync::Lazy;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-//struct SectorsManager {
-//    users: Mutex<sectors::SectorsType>
-//}
-
-//static SECTORS_MANAGER: Lazy<SectorsManager> = Lazy::new(|| {
-//    let users_file = PathBuf::from("users.txt").to_string_lossy().to_string();
-//    let users = sectors::SectorsType::new(Some(users_file), None);
-//
-//    SectorsManager {
-//        users: Mutex::new(users)
-//    }
-//});
-//static mut users: sectors::SectorsType = sectors::SectorsType::new(None, None);
-
 struct User {
     session: session_level::Session,
     username: Option<String>,
