@@ -129,6 +129,34 @@ impl User {
                             self.send(vec![1]);
                         }
                     }
+                    else if data[0] == b"1" {
+                        let chatname = &data[1];
+                        let chathash = &data[2];
+                        let chatnum = polylogs.findbin(0, &chatname);
+                        dbg!("{}", &chatnum);
+                        if chatnum != -1 && &chatname.len() < &64 {
+                            if polylogs.getdat(chatnum as u32, 1) == chathash.to_vec() {
+                                dbg!("stage1");
+                                let usrname = self.username.as_ref().unwrap().as_str().as_bytes().to_owned();
+                                dbg!("stage2");
+                                if !sectors::read_sectors_b(polylogs.getdat(chatnum as u32,2)).contains(&usrname) {
+                                    dbg!("stage3");
+                                    polylogs.add_to_field(chatnum as u32, 2, sectors::write_sector(&usrname));
+                                    polylogs.save().unwrap();
+                                    dbg!("stage4");
+                                    self.send(vec![0]);
+                                } else {
+                                    self.send(vec![3]);
+                                }
+                            } else {
+                                self.send(vec![2]);
+                                dbg!("2");
+                            }
+                        } else {
+                            dbg!("1");
+                            self.send(vec![1]);
+                        }
+                    }
                 }
             } else {
                 info!("Client disconnected\n{:?}", self.session.connection);
