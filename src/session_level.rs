@@ -4,16 +4,12 @@ use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream};
 
 pub struct Session {
     pub connection: Option<TcpStream>,
-    ip: String,
-    port: u16,
 }
 
 impl Session {
-    fn new(connection: Option<TcpStream>, ip: String, port: u16) -> Self {
+    fn new(connection: Option<TcpStream>) -> Self {
         Session {
-            connection,
-            ip,
-            port,
+            connection
         }
     }
 
@@ -28,12 +24,12 @@ impl Session {
                 let mut full_pkg = vec![0; int_len as usize];
                 match self.connection.as_mut().unwrap().read_exact(&mut full_pkg) {
                     Ok(_) => full_pkg,
-                    Err(err) => {
+                    Err(_err) => {
                         vec![]
                     }
                 }
             }
-            Err(err) => {
+            Err(_err) => {
                 vec![]
             }
         }
@@ -60,8 +56,6 @@ pub fn bind(ip: String, port: u16) -> TcpListener {
 }
 
 pub fn accept(socket: &TcpListener) -> Session {
-    let (conn, addr) = socket.accept().unwrap();
-    let ip = addr.ip().to_string();
-    let port = addr.port();
-    Session::new(Some(conn), ip, port)
+    let (conn, _addr) = socket.accept().unwrap();
+    Session::new(Some(conn))
 }

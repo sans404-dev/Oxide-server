@@ -126,7 +126,7 @@ impl SectorsType {
 
     pub fn load(&mut self) -> std::io::Result<()> {
         if let Some(ref filename) = self.filename {
-            if let Err(metadata) = fs::metadata(filename) {
+            if let Err(_metadata) = fs::metadata(filename) {
                 self.save().unwrap();
             }
         }

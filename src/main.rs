@@ -5,8 +5,6 @@ use env_logger::Builder;
 use log::LevelFilter;
 use rand;
 use rand::RngCore;
-use std::io;
-use std::io::Write;
 use std::thread;
 
 mod aes_func;
@@ -18,10 +16,6 @@ use aes::Aes256;
 use generic_array::typenum::U32;
 use rsa::pkcs8::DecodePublicKey;
 use rsa::{traits::PublicKeyParts, Pkcs1v15Encrypt, RsaPublicKey};
-
-use once_cell::sync::Lazy;
-use std::path::PathBuf;
-use std::sync::Mutex;
 
 struct User {
     session: session_level::Session,
