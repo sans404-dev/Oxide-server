@@ -123,6 +123,7 @@ impl User {
                             self.send(vec![1]);
                         }
                     }
+
                     else if data[0] == b"1" {
                         let chatname = &data[1];
                         let chathash = &data[2];
@@ -148,6 +149,15 @@ impl User {
                             }
                         } else {
                             dbg!("1");
+                            self.send(vec![1]);
+                        }
+                    }
+
+                    else if data[0] == b"2" {
+                        let secnum = users.find(1, &data[1]);
+                        if secnum != -1 {
+                            self.send(users.getdat(secnum as u32, 0));
+                        } else {
                             self.send(vec![1]);
                         }
                     }
