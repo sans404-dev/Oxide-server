@@ -234,4 +234,14 @@ impl SectorsType {
         new_data.extend(data);
         self.edit(sector_num, field_num, new_data);
     }
+
+    pub fn obj_sec_get(&mut self, sector_num: u32, field_num: usize) -> SectorsType {
+        let mut obj = SectorsType::new(None, None);
+        obj.data = self.getdat(sector_num, field_num);
+        obj
+    }
+
+    pub fn obj_sec_set(&mut self, sector_num: u32, field_num: usize, secobj: SectorsType) {
+        self.edit(sector_num, field_num, secobj.data);
+    }
 }

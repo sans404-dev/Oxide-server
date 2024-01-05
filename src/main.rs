@@ -83,7 +83,7 @@ impl User {
                         self.session_key =
                             Some(Aes256::new(GenericArray::<u8, U32>::from_slice(&bytes_key)));
                         self.username = Some(data[1].clone());
-                        let user_secnum = users.find(1, data[1].as_bytes());
+                        let user_secnum = users.findbin(1, data[1].as_bytes());
                         dbg!("{}", &user_secnum);
 
                         if user_secnum == -1 {
@@ -91,7 +91,7 @@ impl User {
                             users.save().unwrap();
                         }
 
-                        self.sector_num = users.find(1, data[1].as_bytes());
+                        self.sector_num = users.findbin(1, data[1].as_bytes());
                         if rsa_key
                             != RsaPublicKey::from_public_key_pem(
                                 std::str::from_utf8(&users.getdat(self.sector_num as u32, 0))
@@ -159,6 +159,29 @@ impl User {
                             self.send(users.getdat(secnum as u32, 0));
                         } else {
                             self.send(vec![1]);
+                        }
+                    }
+
+                    else if data[0] == b"3" {
+                        let username = &self.username.as_ref().unwrap().clone().into_bytes();
+                        let chatname = &data[1];
+                        let message = &data[2];
+                        let secnum = polylogs.findbin(0, &chatname);
+                        if secnum != -1 {
+                            let secpass = polylogs.getdat(secnum as u32, 1);
+                            let chat_participants = sectors::read_sectors_b(polylogs.getdat(secnum as u32, 2));
+                            if chat_participants.contains(&username) {
+                                for sub in &chat_participants {
+                                    let secnum = users.findbin(1, sub);
+                                    let mut user_bufferobj = users.obj_sec_get(secnum as u32, 2);
+                                    user_bufferobj.add(vec![vec![b"0"], vec![chatname], vec![message]]);
+                                    users.obj_sec_set(secnum as u32, 2, user_bufferobj);
+                                    users.save().unwrap();
+                                    //let key = Aes256::new(GenericArray::from_slice(&secpass));
+                                    //let dec_msg = sectors::read_sectors_b(aes_func::decrypt(&key, enc_msg.to_vec()));
+                                    dbg!("{:?}", &secnum);
+                                }
+                            }
                         }
                     }
                 }
