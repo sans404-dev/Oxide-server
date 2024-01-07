@@ -1,10 +1,13 @@
 #[macro_use]
 extern crate log;
+extern crate argparse;
 
+use argparse::{ArgumentParser, Store, StoreTrue};
 use env_logger::Builder;
 use log::LevelFilter;
 use rand;
 use rand::RngCore;
+use std::process::exit;
 use std::thread;
 
 mod aes_func;
@@ -16,6 +19,11 @@ use aes::Aes256;
 use generic_array::typenum::U32;
 use rsa::pkcs8::DecodePublicKey;
 use rsa::{traits::PublicKeyParts, Pkcs1v15Encrypt, RsaPublicKey};
+
+struct Options {
+    ip: String,
+    port: u16,
+}
 
 struct User {
     session: session_level::Session,
@@ -112,6 +120,9 @@ impl User {
                     }
                 } else {
                     let data = &sectors::read_sectors_b(data);
+                    polylogs.load().unwrap();
+                    users.load().unwrap();
+
                     if data[0] == b"0" {
                         let chatname = &data[1];
                         let chathash = &data[2];
@@ -122,9 +133,7 @@ impl User {
                         } else {
                             self.send(vec![1]);
                         }
-                    }
-
-                    else if data[0] == b"1" {
+                    } else if data[0] == b"1" {
                         let chatname = &data[1];
                         let chathash = &data[2];
                         let chatnum = polylogs.findbin(0, &chatname);
@@ -132,11 +141,23 @@ impl User {
                         if chatnum != -1 && &chatname.len() < &64 {
                             if polylogs.getdat(chatnum as u32, 1) == chathash.to_vec() {
                                 dbg!("stage1");
-                                let usrname = self.username.as_ref().unwrap().as_str().as_bytes().to_owned();
+                                let usrname = self
+                                    .username
+                                    .as_ref()
+                                    .unwrap()
+                                    .as_str()
+                                    .as_bytes()
+                                    .to_owned();
                                 dbg!("stage2");
-                                if !sectors::read_sectors_b(polylogs.getdat(chatnum as u32,2)).contains(&usrname) {
+                                if !sectors::read_sectors_b(polylogs.getdat(chatnum as u32, 2))
+                                    .contains(&usrname)
+                                {
                                     dbg!("stage3");
-                                    polylogs.add_to_field(chatnum as u32, 2, sectors::write_sector(&usrname));
+                                    polylogs.add_to_field(
+                                        chatnum as u32,
+                                        2,
+                                        sectors::write_sector(&usrname),
+                                    );
                                     polylogs.save().unwrap();
                                     dbg!("stage4");
                                     self.send(vec![0]);
@@ -151,38 +172,50 @@ impl User {
                             dbg!("1");
                             self.send(vec![1]);
                         }
-                    }
-
-                    else if data[0] == b"2" {
+                    } else if data[0] == b"2" {
                         let secnum = users.find(1, &data[1]);
                         if secnum != -1 {
                             self.send(users.getdat(secnum as u32, 0));
                         } else {
                             self.send(vec![1]);
                         }
-                    }
-
-                    else if data[0] == b"3" {
+                    } else if data[0] == b"3" {
                         let username = &self.username.as_ref().unwrap().clone().into_bytes();
                         let chatname = &data[1];
                         let message = &data[2];
                         let secnum = polylogs.findbin(0, &chatname);
                         if secnum != -1 {
                             let secpass = polylogs.getdat(secnum as u32, 1);
-                            let chat_participants = sectors::read_sectors_b(polylogs.getdat(secnum as u32, 2));
+                            let chat_participants =
+                                sectors::read_sectors_b(polylogs.getdat(secnum as u32, 2));
                             if chat_participants.contains(&username) {
                                 for sub in &chat_participants {
                                     let secnum = users.findbin(1, sub);
                                     let mut user_bufferobj = users.obj_sec_get(secnum as u32, 2);
-                                    user_bufferobj.add(vec![vec![b"0"], vec![chatname], vec![message]]);
+                                    user_bufferobj.add(vec![
+                                        vec![b"0"],
+                                        vec![chatname],
+                                        vec![message],
+                                    ]);
                                     users.obj_sec_set(secnum as u32, 2, user_bufferobj);
                                     users.save().unwrap();
+                                    dbg!("saved");
                                     //let key = Aes256::new(GenericArray::from_slice(&secpass));
                                     //let dec_msg = sectors::read_sectors_b(aes_func::decrypt(&key, enc_msg.to_vec()));
                                     dbg!("{:?}", &secnum);
                                 }
+                                self.send(vec![0]);
+                            } else {
+                                self.send(vec![1]);
                             }
+                        } else {
+                            self.send(vec![2]);
                         }
+                    } else if data[0] == b"4" {
+                        let user_bufferobj = users.obj_sec_get(self.sector_num as u32, 2);
+                        self.send(sectors::int_to_bytes(
+                            sectors::read_sectors_b(user_bufferobj.data).len() as u64,
+                        ));
                     }
                 }
             } else {
@@ -196,8 +229,31 @@ impl User {
 
 fn main() {
     Builder::new().filter_level(LevelFilter::max()).init();
-    info!("Welcome to test server :)");
-    let binder = session_level::bind("127.0.0.1".to_string(), 4444);
+    let mut options = Options {
+        ip: String::from("127.0.0.1"),
+        port: 4444,
+    };
+    {
+        let mut ap = ArgumentParser::new();
+        ap.set_description("Starts the messenger server");
+        ap.refer(&mut options.ip)
+            .add_option(&["-i", "--ip"], Store, "Server binding ip");
+        ap.refer(&mut options.port)
+            .add_option(&["-p", "--port"], Store, "Server binding port");
+        match ap.parse_args() {
+            Ok(()) => {}
+            Err(x) => {
+                exit(x);
+            }
+        }
+        ap.parse_args_or_exit();
+    }
+
+    info!(
+        "Welcome to test server :)\n binding on {}:{}",
+        &options.ip, &options.port
+    );
+    let binder = session_level::bind(options.ip, options.port);
     loop {
         let session = session_level::accept(&binder);
         info!("{:?}", &session.connection);
