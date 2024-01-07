@@ -2,7 +2,7 @@
 extern crate log;
 extern crate argparse;
 
-use argparse::{ArgumentParser, Store, StoreTrue};
+use argparse::{ArgumentParser, Store};
 use env_logger::Builder;
 use log::LevelFilter;
 use rand;
@@ -173,7 +173,7 @@ impl User {
                             self.send(vec![1]);
                         }
                     } else if data[0] == b"2" {
-                        let secnum = users.find(1, &data[1]);
+                        let secnum = users.findbin(1, &data[1]);
                         if secnum != -1 {
                             self.send(users.getdat(secnum as u32, 0));
                         } else {
@@ -185,7 +185,6 @@ impl User {
                         let message = &data[2];
                         let secnum = polylogs.findbin(0, &chatname);
                         if secnum != -1 {
-                            let secpass = polylogs.getdat(secnum as u32, 1);
                             let chat_participants =
                                 sectors::read_sectors_b(polylogs.getdat(secnum as u32, 2));
                             if chat_participants.contains(&username) {
@@ -200,8 +199,6 @@ impl User {
                                     users.obj_sec_set(secnum as u32, 2, user_bufferobj);
                                     users.save().unwrap();
                                     dbg!("saved");
-                                    //let key = Aes256::new(GenericArray::from_slice(&secpass));
-                                    //let dec_msg = sectors::read_sectors_b(aes_func::decrypt(&key, enc_msg.to_vec()));
                                     dbg!("{:?}", &secnum);
                                 }
                                 self.send(vec![0]);
@@ -216,6 +213,20 @@ impl User {
                         self.send(sectors::int_to_bytes(
                             sectors::read_sectors_b(user_bufferobj.data).len() as u64,
                         ));
+                    } else if data[0] == b"5" {
+                        let bufnum = sectors::bytes_to_int(&data[1]);
+                        dbg!("{}", bufnum);
+                        let user_bufferobj = users.obj_sec_get(self.sector_num as u32, 2);
+                        dbg!("{}", &user_bufferobj.data.len());
+                        let buf_dat = sectors::read_sectors_b(user_bufferobj.data);
+                        let buf_len = &buf_dat.len();
+                        dbg!("{}", &buf_len);
+                        if buf_len > &0 && bufnum < *buf_len as u64 {
+                            let sec = &buf_dat[bufnum as usize];
+                            self.send(sec.to_vec());
+                        } else {
+                            self.send(vec![1]);
+                        }
                     }
                 }
             } else {

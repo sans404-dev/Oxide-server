@@ -28,6 +28,9 @@ pub fn int_to_bytes(int_: u64) -> Vec<u8> {
 }
 
 pub fn bytes_to_int(bytes: &[u8]) -> u64 {
+    if bytes.iter().all(|&byte| byte == 0) {
+        return 0;
+    }
     u64::from_le_bytes(bytes.try_into().unwrap())
 }
 
