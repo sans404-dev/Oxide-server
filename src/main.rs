@@ -261,7 +261,7 @@ fn main() {
     }
 
     info!(
-        "Welcome to test server :)\n binding on {}:{}",
+        "Welcome to messenger server :)\n binding on {}:{}",
         &options.ip, &options.port
     );
     let binder = session_level::bind(options.ip, options.port);
