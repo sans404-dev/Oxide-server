@@ -19,6 +19,15 @@ use aes::Aes256;
 use generic_array::typenum::U32;
 use rsa::pkcs8::DecodePublicKey;
 use rsa::{traits::PublicKeyParts, Pkcs1v15Encrypt, RsaPublicKey};
+use std::collections::HashMap;
+use lazy_static::lazy_static;
+use std::sync::Mutex;
+lazy_static! {
+    static ref GLOBAL_MAP: Mutex<HashMap<&'static User>> = {
+        let mut map = HashMap::new();
+        Mutex::new(map)
+    };
+}
 
 struct Options {
     ip: String,
@@ -77,7 +86,7 @@ impl User {
                     dbg!(&data);
                     dbg!("{:?}", &rsa_key.size() * 8);
                     dbg!("{}", data[1].len());
-                    if (&rsa_key.size() * 8 == 1024) && (data[1].len() <= 100) {
+                    if (&rsa_key.size() * 8 == 4096) && (data[1].len() <= 100) {
                         info!("starting registration");
                         let mut rng = rand::thread_rng();
                         let mut bytes_key = [0u8; 32];
