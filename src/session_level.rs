@@ -49,8 +49,7 @@ impl Session {
 
 pub fn bind(ip: String, port: u16) -> TcpListener {
     let local_addr: SocketAddr = format!("{}:{}", ip, port).parse().unwrap();
-    let listener = TcpListener::bind(local_addr).unwrap();
-    listener
+    TcpListener::bind(local_addr).unwrap()
 }
 
 pub fn accept(socket: &TcpListener) -> Session {

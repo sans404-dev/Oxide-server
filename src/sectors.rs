@@ -154,23 +154,6 @@ impl SectorsType {
         Ok(())
     }
 
-    pub fn find(&mut self, field_num: usize, query: &[u8]) -> i32 {
-        let data = &self.data;
-        let search = TwoWaySearcher::new(&query);
-
-        for (en, sector) in reader(data.to_vec()) {
-            if search.search_in(&sector).is_some() {
-                let fields = read_sectors(sector.into());
-                if fields.len() >= field_num + 1 {
-                    if fields[field_num].as_bytes() == query {
-                        return en as i32;
-                    }
-                }
-            }
-        }
-        -1
-    }
-
     pub fn findbin(&mut self, field_num: usize, query: &[u8]) -> i32 {
         let data = &self.data;
         let search = TwoWaySearcher::new(&query);
@@ -200,13 +183,6 @@ impl SectorsType {
             }
         }
         Vec::new()
-    }
-
-    pub fn rem(&mut self, sector_num: usize) {
-        let data = &self.data;
-        let mut sectors = read_sectors(data.to_vec());
-        sectors.remove(sector_num);
-        self.data = write_sectors(vec![sectors.iter().map(|sct| sct.as_bytes()).collect()]);
     }
 
     pub fn edit(&mut self, sector_num: u32, field_num: usize, data: Vec<u8>) {

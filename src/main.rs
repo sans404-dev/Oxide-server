@@ -5,7 +5,6 @@ extern crate argparse;
 use argparse::{ArgumentParser, Store};
 use env_logger::Builder;
 use log::LevelFilter;
-use rand;
 use rand::RngCore;
 use std::process::exit;
 use std::thread;
@@ -55,11 +54,6 @@ impl User {
             data = aes_func::encrypt(session_key, &data);
         }
         self.session.send(&data);
-    }
-
-    pub fn sendarr(&mut self, data: Vec<Vec<&[u8]>>) {
-        let data = sectors::write_sectors(data);
-        self.send(data);
     }
 
     fn user_thread(&mut self) {

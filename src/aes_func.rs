@@ -1,8 +1,5 @@
 use aes::cipher::{generic_array::GenericArray, BlockDecrypt, BlockEncrypt};
 use aes::Aes256;
-use generic_array::typenum::U32;
-use hex::ToHex;
-use sha2::{Digest, Sha256};
 
 pub fn pkcs7padding(data: Vec<u8>, block_length: usize) -> Vec<u8> {
     let padding_size = block_length - (data.len() % block_length);
@@ -38,14 +35,4 @@ pub fn decrypt(_aes: &Aes256, data: Vec<u8>) -> Vec<u8> {
         decrypted.extend_from_slice(mut_block.as_slice());
     }
     pkcs7unpadding(decrypted)
-}
-
-pub fn get_aes_session_password(key: &[u8]) -> GenericArray<u8, U32> {
-    let mut hasher = Sha256::new();
-    hasher.update(key);
-    hasher.update(b"salt");
-    let result = hasher.finalize();
-    dbg!("{}", &result.encode_hex::<String>());
-    dbg!(&result.len());
-    result
 }
